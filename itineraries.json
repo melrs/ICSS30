@@ -1,0 +1,57 @@
+[
+    {
+        "id": 1,
+        "destination": "Bahamas",
+        "departure": "2025-07-01",
+        "ship": "OceanX",
+        "price": 1000,
+        "arrival": "Bahamas",
+        "stops": ["Nassau", "Freeport"],
+        "nights": 5,
+        "departurePort": "Miami"
+    },
+    {
+        "id": 2,
+        "destination": "Caribbean",
+        "departure": "2025-08-10",
+        "ship": "SeaCruiser",
+        "price": 1500,
+        "arrival": "Virgin Islands",
+        "stops": ["San Juan", "St. Thomas"],
+        "nights": 7,
+        "departurePort": "Fort Lauderdale"
+    },
+    {
+        "id": 3,
+        "destination": "Mediterranean",
+        "departure": "2025-09-15",
+        "ship": "Mediterranea",
+        "price": 2000,
+        "arrival": "Italy",
+        "stops": ["Barcelona", "Marseille", "Naples"],
+        "nights": 10,
+        "departurePort": "Barcelona"
+    },
+    {
+        "id": 4,
+        "destination": "Alaska",
+        "departure": "2025-06-20",
+        "ship": "Arctic Explorer",
+        "price": 1800,
+        "arrival": "Anchorage",
+        "stops": ["Juneau", "Skagway", "Glacier Bay"],
+        "nights": 7,
+        "departurePort": "Seattle"
+    },
+    {
+        "id": 5,
+        "destination": "Hawaii",
+        "departure": "2025-11-05",
+        "ship": "Pacific Dream",
+        "price": 2200,
+        "arrival": "Honolulu",
+        "stops": ["Maui", "Kauai", "Big Island"],
+        "nights": 12,
+        "departurePort": "Los Angeles"
+    }
+]
