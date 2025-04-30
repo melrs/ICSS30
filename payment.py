@@ -2,42 +2,44 @@ import random
 import pika, json
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes, serialization
-from config import PAYMENT_APPROVED_QUEUE, PAYMENT_DECLINED_QUEUE, RESERVATION_CREATED_QUEUE, PAYMENT_MESSAGE_FORMAT, ITINERARIES_FILE
+from config import PAYMENT_APPROVED_EXCHANGE, PAYMENT_APPROVED_RESERVE_QUEUE, PAYMENT_APPROVED_TICKED_QUEUE, PAYMENT_DECLINED_QUEUE, RESERVATION_CREATED_QUEUE, PAYMENT_MESSAGE_FORMAT, ITINERARIES_FILE, PAYMENT_PRIVATE_KEY_FILE
+from utils import load_itineraries, create_channel, sign_message
+from datetime import datetime
 
-private_key = serialization.load_pem_private_key(open("payment_private.pem", "rb").read(), password=None)
 
-with open(ITINERARIES_FILE, "r") as f:
-    itineraries = {itinerary["id"]: itinerary for itinerary in json.load(f)}
+itineraries = load_itineraries(ITINERARIES_FILE)
+ch = create_channel()
 
-def sign(message):
-    return private_key.sign(
-        message.encode(),
-        padding.PKCS1v15(),
-        hashes.SHA256()
-    ).hex()
+ch.exchange_declare(exchange=PAYMENT_APPROVED_EXCHANGE, exchange_type='fanout')
 
-conn = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-ch = conn.channel()
-
-for queue in [RESERVATION_CREATED_QUEUE, PAYMENT_APPROVED_QUEUE, PAYMENT_DECLINED_QUEUE]:
+for queue in [RESERVATION_CREATED_QUEUE, PAYMENT_APPROVED_RESERVE_QUEUE, PAYMENT_APPROVED_TICKED_QUEUE, PAYMENT_DECLINED_QUEUE]:
     ch.queue_declare(queue=queue)
 
-def callback(ch, method, properties, body):
+ch.queue_bind(exchange=PAYMENT_APPROVED_EXCHANGE, queue=PAYMENT_APPROVED_RESERVE_QUEUE)
+ch.queue_bind(exchange=PAYMENT_APPROVED_EXCHANGE, queue=PAYMENT_APPROVED_TICKED_QUEUE)
+
+def handle_reservation(ch, method, properties, body):
     data = json.loads(body)
-    itinerary = itineraries[int(data["destination_id"])]
-    message = f"Reservation confirmed for {itinerary['destination']} on ship {itinerary['ship']}."
+    itinerary = itineraries[int(data["itinerary_id"])]
+    status = 'denied'
+    routing_key = PAYMENT_DECLINED_QUEUE
+    exchange = ''
+    if random.choice([True, False]):
+        status = 'approved'
+        routing_key = ''
+        exchange = PAYMENT_APPROVED_EXCHANGE
 
-    approved = random.choice([True, False])
+    message = f'Payment {status} for {itinerary["destination"]} on ship {itinerary["ship"]}.'
+    ch.basic_publish(exchange=exchange, routing_key=routing_key, body=json.dumps(create_signed_message(message)))
+    print(f"[Payment] [{datetime.now().isoformat()}] {message}")
 
-    msg = {
+def create_signed_message(message):
+    return {
+        "timestamp": datetime.now().isoformat(),
         "message": message,
-        "signature": sign(message)
+        "signature": sign_message(message, PAYMENT_PRIVATE_KEY_FILE)
     }
 
-    queue = PAYMENT_APPROVED_QUEUE if approved else PAYMENT_DECLINED_QUEUE
-    ch.basic_publish(exchange='', routing_key=queue, body=json.dumps(msg))
-    print(f"[Payment] {'Approved' if approved else 'Denied'} - Message sent.")
-
-ch.basic_consume(queue=RESERVATION_CREATED_QUEUE, on_message_callback=callback, auto_ack=True)
+ch.basic_consume(queue=RESERVATION_CREATED_QUEUE, on_message_callback=handle_reservation, auto_ack=True)
 print("[Payment] Waiting for reservations...")
 ch.start_consuming()
