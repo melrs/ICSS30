@@ -1,8 +1,7 @@
-import json
 import time
 import pika
 import threading
-from config import ITINERARIES_FILE
+from config import ITINERARIES_FILE, MARKETING_EXCHANGE
 from utils import load_itineraries
 
 itineraries = load_itineraries(ITINERARIES_FILE)
@@ -14,8 +13,10 @@ for itinerary in itineraries.values():
 def subscribe_to_promotion(destination):
     conn = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
     ch = conn.channel()
-    queue = f'promotions-{destination.lower()}'
-    ch.queue_declare(queue=queue)
+    ch.exchange_declare(exchange=MARKETING_EXCHANGE, exchange_type='direct')
+    result = ch.queue_declare(queue='', exclusive=True)
+    queue = result.method.queue
+    ch.queue_bind(exchange=MARKETING_EXCHANGE, queue=queue, routing_key=f'promotions-{destination.lower()}')
     ch.basic_consume(queue=queue, on_message_callback=lambda ch, method, props, body: print(f"[Promotion] {body.decode()}"), auto_ack=True)
     print(f"[Subscriber] Subscribed to promotions for {destination}. Waiting for messages...")
     ch.start_consuming()

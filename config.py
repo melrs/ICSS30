@@ -6,6 +6,7 @@ PAYMENT_APPROVED_RESERVE_QUEUE = "payment-approved-reserve"
 PAYMENT_DECLINED_QUEUE = "payment-declined"
 TICKET_ISSUED_QUEUE = "ticket-issued"
 PAYMENT_APPROVED_EXCHANGE = "payment-approved-exchange"
+MARKETING_EXCHANGE = "marketing-exchange"
 RESERVATION_QUEUES = [
     RESERVATION_CREATED_QUEUE,
     PAYMENT_APPROVED_RESERVE_QUEUE,

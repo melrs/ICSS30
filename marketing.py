@@ -1,22 +1,19 @@
 import pika
 import json
 import random
-from config import ITINERARIES_FILE
+from config import ITINERARIES_FILE, MARKETING_EXCHANGE
 import time
 
 conn = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
 ch = conn.channel()
+ch.exchange_declare(exchange=MARKETING_EXCHANGE, exchange_type='direct')
 
 with open(ITINERARIES_FILE, 'r') as file:
     itineraries = json.load(file)
     destinations = [itinerary['destination'] for itinerary in itineraries]
 
-for destination in destinations:
-    ch.queue_declare(queue=f'promotions-{destination.lower()}')
-
 def publish_promotion(destination, msg):
-    queue = f'promotions-{destination.lower()}'
-    ch.basic_publish(exchange='', routing_key=queue, body=msg)
+    ch.basic_publish(exchange=MARKETING_EXCHANGE, routing_key=f'promotions-{destination.lower()}', body=msg)
     print(f"[Marketing] Promotion for {destination} published.")
 
 try:
