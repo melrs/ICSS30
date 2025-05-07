@@ -6,7 +6,7 @@ import threading
 import pika
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
-from config import RESERVATION_QUEUES, ITINERARIES_FILE, ITINERARY_TEMPLATE, RESERVATION_CREATED_QUEUE, PAYMENT_PUBLIC_KEY_FILE, PAYMENT_APPROVED_RESERVE_QUEUE, PAYMENT_DECLINED_QUEUE, TICKET_ISSUED_QUEUE
+from config import RESERVATION_QUEUES, ITINERARIES_FILE, ITINERARY_TEMPLATE, RESERVATION_CREATED_QUEUE, PAYMENT_PUBLIC_KEY_FILE, PAYMENT_APPROVED_QUEUE, PAYMENT_DECLINED_QUEUE, TICKET_ISSUED_QUEUE, PAYMENT_EXCHANGE, TICKET_EXCHANGE
 from utils import is_valid_date, load_itineraries, create_channel, verify_signature
 
 ch = create_channel()
@@ -68,12 +68,20 @@ def consume_queues(root):
 
     def callback_ticket(ch, method, properties, body):
         print("[Reservation] Ticket issued.")
+        print(method.routing_key)
         messagebox.showinfo("Success", "Ticket issued successfully.")
    
-
-    ch.basic_consume(queue=PAYMENT_APPROVED_RESERVE_QUEUE, on_message_callback=callback_approved, auto_ack=True)
-    ch.basic_consume(queue=PAYMENT_DECLINED_QUEUE, on_message_callback=callback_declined, auto_ack=True)
-    ch.basic_consume(queue=TICKET_ISSUED_QUEUE, on_message_callback=callback_ticket, auto_ack=True)
+    queue_approved = ch.queue_declare(queue='', exclusive=True).method.queue
+    ch.queue_bind(exchange=PAYMENT_EXCHANGE, queue=queue_approved, routing_key=PAYMENT_APPROVED_QUEUE)
+    ch.basic_consume(queue=queue_approved, on_message_callback=callback_approved, auto_ack=True)
+    
+    queue_denclined = ch.queue_declare(queue='', exclusive=True).method.queue
+    ch.queue_bind(exchange=PAYMENT_EXCHANGE, queue=queue_denclined, routing_key=PAYMENT_DECLINED_QUEUE)
+    ch.basic_consume(queue=queue_denclined, on_message_callback=callback_declined, auto_ack=True)
+    
+    queue_ticket = ch.queue_declare(queue='', exclusive=True).method.queue
+    ch.queue_bind(exchange=TICKET_EXCHANGE, queue=queue_ticket, routing_key=TICKET_ISSUED_QUEUE)
+    ch.basic_consume(queue=queue_ticket, on_message_callback=callback_ticket, auto_ack=True)
 
     ch.start_consuming()
 

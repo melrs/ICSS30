@@ -2,14 +2,15 @@
 
 RESERVATION_CREATED_QUEUE = "reservation-created"
 PAYMENT_APPROVED_TICKED_QUEUE = "payment-approved-ticket"
-PAYMENT_APPROVED_RESERVE_QUEUE = "payment-approved-reserve"
+PAYMENT_APPROVED_QUEUE = "payment-approved"
 PAYMENT_DECLINED_QUEUE = "payment-declined"
 TICKET_ISSUED_QUEUE = "ticket-issued"
-PAYMENT_APPROVED_EXCHANGE = "payment-approved-exchange"
+PAYMENT_EXCHANGE = "payment-exchange"
+TICKET_EXCHANGE = "ticket-exchange"
 MARKETING_EXCHANGE = "marketing-exchange"
 RESERVATION_QUEUES = [
     RESERVATION_CREATED_QUEUE,
-    PAYMENT_APPROVED_RESERVE_QUEUE,
+    PAYMENT_APPROVED_QUEUE,
     PAYMENT_DECLINED_QUEUE,
     TICKET_ISSUED_QUEUE
 ]
