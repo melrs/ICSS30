@@ -1,12 +1,14 @@
 # Constants for queue names
 
 RESERVATION_CREATED_QUEUE = "reservation-created"
+RESERVATION_CANCELLED_QUEUE = "reservation-cancelled"
 PAYMENT_APPROVED_TICKED_QUEUE = "payment-approved-ticket"
 PAYMENT_APPROVED_QUEUE = "payment-approved"
 PAYMENT_DECLINED_QUEUE = "payment-declined"
 TICKET_ISSUED_QUEUE = "ticket-issued"
 PAYMENT_EXCHANGE = "payment-exchange"
 TICKET_EXCHANGE = "ticket-exchange"
+RESERVATION_CANCELLED_QUEUE = "reservation-cancelled"
 MARKETING_EXCHANGE = "marketing-exchange"
 RESERVATION_QUEUES = [
     RESERVATION_CREATED_QUEUE,
@@ -22,7 +24,7 @@ PAYMENT_PRIVATE_KEY_FILE = "payment_private.pem"
 
 # Constants for RabbitMQ connection parameters
 RABBITMQ_HOST = "localhost"
-RABBITMQ_PORT = 5672
+RABBITMQ_PORT = 15672
 
 # Constants for cryptographic parameters
 HASH_ALGORITHM = "SHA256"
@@ -71,3 +73,6 @@ ITINERARY_TEMPLATES = (
 # Constants for GUI messages
 SEARCH_SUCCESS_MESSAGE = "Search completed successfully."
 SEARCH_FAILURE_MESSAGE = "No itineraries found."
+
+EXTERNAL_PAYMENT_SYSTEM_URL = "http://localhost:5002/ext/process"
+PAYMENT_WEBHOOK_URL = "http://localhost:5001/payments/webhook"

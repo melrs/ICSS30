@@ -8,7 +8,9 @@
         "arrival": "Bahamas",
         "stops": ["Nassau", "Freeport"],
         "nights": 5,
-        "departurePort": "Miami"
+        "departurePort": "Miami",
+        "total_cabins": 10,
+        "available_cabins": 10
     },
     {
         "id": 2,
@@ -19,7 +21,9 @@
         "arrival": "Virgin Islands",
         "stops": ["San Juan", "St. Thomas"],
         "nights": 7,
-        "departurePort": "Fort Lauderdale"
+        "departurePort": "Fort Lauderdale",
+        "total_cabins": 10,
+        "available_cabins": 10
     },
     {
         "id": 3,
@@ -30,7 +34,9 @@
         "arrival": "Italy",
         "stops": ["Barcelona", "Marseille", "Naples"],
         "nights": 10,
-        "departurePort": "Barcelona"
+        "departurePort": "Barcelona",
+        "total_cabins": 10,
+        "available_cabins": 10
     },
     {
         "id": 4,
@@ -41,7 +47,9 @@
         "arrival": "Anchorage",
         "stops": ["Juneau", "Skagway", "Glacier Bay"],
         "nights": 7,
-        "departurePort": "Seattle"
+        "departurePort": "Seattle",
+        "total_cabins": 10,
+        "available_cabins": 10
     },
     {
         "id": 5,
@@ -52,6 +60,8 @@
         "arrival": "Honolulu",
         "stops": ["Maui", "Kauai", "Big Island"],
         "nights": 12,
-        "departurePort": "Los Angeles"
+        "departurePort": "Los Angeles",
+        "total_cabins": 10,
+        "available_cabins": 10
     }
 ]

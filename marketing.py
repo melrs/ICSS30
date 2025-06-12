@@ -13,7 +13,7 @@ with open(ITINERARIES_FILE, 'r') as file:
     destinations = [itinerary['destination'] for itinerary in itineraries]
 
 def publish_promotion(destination, msg):
-    ch.basic_publish(exchange=MARKETING_EXCHANGE, routing_key=f'promotions-{destination.lower()}', body=msg)
+    ch.basic_publish(exchange=MARKETING_EXCHANGE, routing_key=f'promotions', body=msg)
     print(f"[Marketing] Promotion for {destination} published.")
 
 try:
