@@ -3,7 +3,7 @@ import threading
 import time
 import random
 from datetime import datetime
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, url_for
 import pika
 import requests
 from flask_sse import sse
@@ -18,12 +18,13 @@ from config import (
 from utils import create_channel, verify_signature, load_itineraries # load_itineraries ainda é usado para carregar destinos para promoções
 
 app = Flask(__name__)
-CORS(app)
-app.config["REDIS_URL"] = "redis://localhost:6379/0"
+app.config["REDIS_URL"] = "redis://localhost"
+app.config['SERVER_NAME'] = 'localhost:5000'
+app.config['PREFERRED_URL_SCHEME'] = 'http'
 app.register_blueprint(sse, url_prefix='/sse')
-
 MS_ITINERARIES_URL = "http://localhost:5003"
 MS_PAYMENT_URL = "http://localhost:5001"
+CORS(app)
 
 publish_channel = create_channel()
 publish_channel.exchange_declare(exchange=PAYMENT_EXCHANGE, exchange_type='direct')
@@ -33,7 +34,6 @@ publish_channel.queue_declare(queue=RESERVATION_CREATED_QUEUE)
 publish_channel.queue_declare(queue=RESERVATION_CANCELLED_QUEUE)
 
 promotion_subscribers = []
-
 
 def _publish_sse_event(channel_name, event_type, message_data):
     try:
@@ -46,8 +46,8 @@ def _publish_sse_event(channel_name, event_type, message_data):
 def _get_client_status_channel(client_id):
     return f"reservation-status-{client_id}"
 
-def _get_promo_channel(destination):
-    return f"promotions-{destination.lower()}"
+def _get_promo_channel(client_id):
+    return f"promotions-{client_id}"
 
 def _handle_payment_approved(ch, method, properties, body):
     data = json.loads(body)
@@ -101,7 +101,8 @@ def _handle_promotion(ch, method, properties, body):
     print(f"[Reservation MS - Consumer] Promoção Recebida: {message}")
 
     for client_id in promotion_subscribers:
-        _publish_sse_event(client_id, 'promotion', {"message": message})
+        print(f"[Reservation MS - Consumer] Enviando promoção para cliente {client_id}...")
+        _publish_sse_event(_get_promo_channel(client_id), 'promotion', {"message": message})
 
     ch.basic_ack(method.delivery_tag)
 
@@ -272,7 +273,7 @@ def subscribe_to_promotions():
     if not data or 'client_id' not in data:
         return jsonify({"error": "client_id ausente"}), 400
     
-    client_id = data['client_id']
+    client_id = int(data['client_id'])
 
     if client_id not in promotion_subscribers:
         promotion_subscribers.append(client_id)
@@ -283,12 +284,13 @@ def subscribe_to_promotions():
 @app.route('/api/reserve/promotions/unsubscribe', methods=['POST'])
 def unsubscribe_from_promotions():
     data = request.get_json()
+    print(f"[Reservation MS] Recebida solicitação de cancelamento de inscrição em promoções: {data}")
     if not data or 'client_id' not in data:
         return jsonify({"error": "client_id ausente"}), 400
     
-    client_id = data['client_id']
+    client_id = int(data['client_id'])
     if client_id in promotion_subscribers:
-        del promotion_subscribers[client_id]
+        promotion_subscribers.remove(client_id)
         print(f"[Reservation MS] Cliente {client_id} cancelou a inscrição em promoções.")
         return jsonify({"message": "Cancelamento de inscrição em promoções bem-sucedido."}), 200
     else:
