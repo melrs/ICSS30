@@ -8,7 +8,7 @@ class PaymentRequest:
     itinerary_id: int
     passengers: int
     total_price: Decimal
-    buyer_info: dict
+    client_id: int
     currency: str = "USD"
 
     def from_dict(data: dict) -> "PaymentRequest":
@@ -16,7 +16,7 @@ class PaymentRequest:
             itinerary_id=data.get("itinerary_id", 0), 
             passengers=data.get("passengers", 1),
             total_price=Decimal(data.get("total_price", 0)),
-            buyer_info=data.get("buyer_info", {}),
+            client_id=data.get("client_id", 0),
             currency=data.get("currency", "USD")
         )
         instance._validate_data(data)
@@ -25,16 +25,16 @@ class PaymentRequest:
     def _validate_data(self, data: dict):
         if not isinstance(data, dict):
             raise ValueError("Data must be a dictionary.")
-        if not all(key in data for key in ["itinerary_id", "passengers", "total_price", "buyer_info"]):
-            raise ValueError("Missing required fields: itinerary_id, passengers, total_price, buyer_info.")
+        if not all(key in data for key in ["itinerary_id", "passengers", "total_price", "client_id"]):
+            raise ValueError("Missing required fields: itinerary_id, passengers, total_price, client_id.")
         if not isinstance(data["itinerary_id"], int) or data["itinerary_id"] <= 0:
             raise ValueError("itinerary_id must be a positive integer.")
         if not isinstance(data["passengers"], int) or data["passengers"] <= 0:
             raise ValueError("passengers must be a positive integer.")
         if not isinstance(data["total_price"], (int, float, Decimal)):
             raise ValueError("total_price must be a number.")
-        if not isinstance(data["buyer_info"], dict):
-            raise ValueError("buyer_info must be a dictionary.")
+        if not isinstance(data["client_id"], int):
+            raise ValueError("client_id must be a number.")
         if "currency" in data and not isinstance(data["currency"], str):
             raise ValueError("currency must be a string.")
 
@@ -43,7 +43,7 @@ class PaymentPayload:
     transaction_id: str
     amount: Decimal
     currency: str
-    buyer_info: dict
+    client_id: int
     itinerary_id: int
     status: str
 
@@ -52,7 +52,7 @@ class PaymentPayload:
             transaction_id=transaction_id,
             amount=request.total_price,
             currency=request.currency,
-            buyer_info=request.buyer_info,
+            client_id=request.client_id,
             itinerary_id=request.itinerary_id,
             status="pending_external_confirmation"
         )
@@ -60,14 +60,14 @@ class PaymentPayload:
     def from_dict(data: dict) -> "PaymentPayload":
         if not isinstance(data, dict):
             raise ValueError("Data must be a dictionary.")
-        if not all(key in data for key in ["transaction_id", "amount", "currency", "buyer_info", "itinerary_id", "status"]):
-            raise ValueError("Missing required fields: transaction_id, amount, currency, buyer_info, itinerary_id, status.")
+        if not all(key in data for key in ["transaction_id", "amount", "currency", "client_id", "itinerary_id", "status"]):
+            raise ValueError("Missing required fields: transaction_id, amount, currency, client_id, itinerary_id, status.")
         
         return PaymentPayload(
             transaction_id=data["transaction_id"],
             amount=Decimal(data["amount"]),
             currency=data["currency"],
-            buyer_info=data["buyer_info"],
+            client_id=data["client_id"],
             itinerary_id=data["itinerary_id"],
             status=data["status"]
         )
@@ -77,7 +77,7 @@ class PaymentPayload:
             "transaction_id": self.transaction_id,
             "amount": str(self.amount),  # Convert Decimal to string for JSON serialization
             "currency": self.currency,
-            "buyer_info": self.buyer_info,
+            "client_id": self.client_id,
             "itinerary_id": self.itinerary_id,
             "status": self.status
         }

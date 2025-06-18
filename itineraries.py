@@ -89,7 +89,7 @@ class ItineraryService:
         match_destination = not itinerary_request.destination or itinerary_details["destination"].lower() == itinerary_request.destination.lower()
         match_port = not itinerary_request.boarding_port or itinerary_details["departurePort"].lower() == itinerary_request.boarding_port.lower()
         match_date = not itinerary_request.date or datetime.strptime(itinerary_details["departure"], "%Y-%m-%d").date() == itinerary_request.date
-        should_filter = itinerary_details["available_cabins"] > 0 or not any([itinerary_request.destination, itinerary_request.boarding_date_str, itinerary_request.boarding_port])
+        should_filter = itinerary_details["available_cabins"] > 0 or not any([itinerary_request.destination, itinerary_request.date, itinerary_request.boarding_port])
         return  match_destination and match_port and match_date and should_filter
     
     def run(self):

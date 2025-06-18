@@ -5,7 +5,7 @@ from cryptography.hazmat.primitives.asymmetric import padding
 import json, pika
 from config import RABBITMQ_HOST
 
-PaymentRequest = namedtuple('PaymentRequest', ['itinerary_id', 'passengers', 'total_price', 'buyer_info', 'currency'])
+PaymentRequest = namedtuple('PaymentRequest', ['itinerary_id', 'passengers', 'total_price', 'client_id', 'currency'])
 
 def create_channel():
     conn = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))

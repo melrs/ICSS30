@@ -10,15 +10,14 @@ ch.exchange_declare(exchange=TICKET_EXCHANGE, exchange_type='direct')
 def createTicket(ch, method, properties, body):
     data = json.loads(body)
     print(method.routing_key)
-    if verify_signature(data["message"], data["signature"], PAYMENT_PUBLIC_KEY_FILE):
-        message = f"Ticket Issued for {data['message']}"
-        ch.basic_publish(exchange=TICKET_EXCHANGE, routing_key=TICKET_ISSUED_QUEUE, body=json.dumps(create_message(message)))
-        print(f"[Ticket] [{datetime.now().isoformat()}] " + message)
+    ch.basic_publish(exchange=TICKET_EXCHANGE, routing_key=TICKET_ISSUED_QUEUE, body=json.dumps(create_message(data['message'])))
+    print(f"[Ticket] [{datetime.now().isoformat()}] " + data['message'])
 
 def create_message(message):
     return {
         "timestamp": datetime.now().isoformat(),
-        "message": message,
+        "status": "Ticket Issued",
+        "details": message
     }
 
 ch.queue_declare(queue=PAYMENT_APPROVED_QUEUE)

@@ -43,12 +43,18 @@ class PaymentService:
             print(f"[Payment Webhook] Received data: {data}")
             payload = PaymentPayload.from_dict(data)
             print(f"[Payment Webhook] Received payment notification: {payload}")
-            message_content = f"Transaction {payload.transaction_id} for {payload.amount} {payload.currency} from {payload.buyer_info} for itinerary {payload.itinerary_id} was {payload.status}."
-            signed_message = self._create_signed_message(message_content, payload)
+            message_content = {
+                "transaction_id": payload.transaction_id,
+                "amount": payload.amount.quantize(0.01),
+                "currency": payload.currency,
+                "client_id": payload.client_id,
+                "itinerary_id": payload.itinerary_id,
+                "status": payload.status,
+            }
             self.channel.basic_publish(
                 exchange=PAYMENT_EXCHANGE,
                 routing_key=self._get_routing_key(payload.status),
-                body=json.dumps(signed_message)
+                body=json.dumps(message_content)
             )
             print(f"[Payment] Message published")
         except Exception as e:
@@ -88,14 +94,6 @@ class PaymentService:
             raise ValueError(f"Invalid payment status: {status}")
         
         return routing_key
-    
-    def _create_signed_message(self, message, payload: PaymentPayload):
-        return {
-            "timestamp": datetime.now().isoformat(),
-            "message": message,
-            "signature": sign_message(message, PAYMENT_PRIVATE_KEY_FILE),
-            "data": payload.to_dict()
-        }
 
     def run(self):
         print("[Payment MS] Starting Flask application...")

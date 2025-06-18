@@ -34,6 +34,7 @@ publish_channel.queue_declare(queue=RESERVATION_CREATED_QUEUE)
 publish_channel.queue_declare(queue=RESERVATION_CANCELLED_QUEUE)
 
 promotion_subscribers = []
+reservations = []
 
 def _publish_sse_event(channel_name, event_type, message_data):
     try:
@@ -51,19 +52,15 @@ def _get_promo_channel(client_id):
 
 def _handle_payment_approved(ch, method, properties, body):
     data = json.loads(body)
-    message_to_verify = f"{data['timestamp']}|{data['message']}"
-    if verify_signature(message_to_verify, data["signature"], PAYMENT_PUBLIC_KEY_FILE):
-        print(f"[Reservation MS - Consumer] Pagamento Aprovado: {data['message']}")
-        client_id = None
-        try: 
-            client_id_part = data['message'].split("from Client ")[1].split(" for itinerary")[0].strip()
-            if client_id_part: client_id = client_id_part
-        except (IndexError, ValueError): pass
-        
-        target_channel = _get_client_status_channel(client_id) if client_id else "general_reservation_status"
-        _publish_sse_event(target_channel, 'payment_approved', data)
-    else:
-        print("[Reservation MS - Consumer] Assinatura inválida para pagamento aprovado. Ignorando.")
+    print(f"[Reservation MS - Consumer] Pagamento Aprovado: {data['message']}")
+    client_id = None
+    try: 
+        client_id_part = data['message'].split("from Client ")[1].split(" for itinerary")[0].strip()
+        if client_id_part: client_id = client_id_part
+    except (IndexError, ValueError): pass
+    
+    target_channel = _get_client_status_channel(client_id) if client_id else "general_reservation_status"
+    _publish_sse_event(target_channel, 'payment_approved', data)
     ch.basic_ack(method.delivery_tag)
 
 def _handle_payment_declined(ch, method, properties, body):
@@ -136,10 +133,6 @@ consumer_thread.start()
 
 @app.route('/api/reserve/itineraries', methods=['GET'])
 def get_itineraries():
-    destination = request.args.get('destination')
-    boarding_date = request.args.get('boarding_date')
-    boarding_port = request.args.get('boarding_port')
-
     params = {k: v for k, v in locals().items() if v is not None and k in ['destination', 'boarding_date', 'boarding_port']}
     
     try:
@@ -160,7 +153,7 @@ def make_reservation():
 
     itinerary_id = data.get('itinerary_id')
     passengers = data.get('passengers')
-    client_id = data.get('client_id')
+    client_id = int(data.get('client_id'))
 
     if not all([itinerary_id, passengers, client_id]):
         return jsonify({"error": "Dados ausentes: itinerary_id, passengers e client_id são obrigatórios"}), 400
@@ -186,7 +179,6 @@ def make_reservation():
         return jsonify({"error": "Ocorreu um erro inesperado."}), 500
 
     total_price = itinerary_details['price'] * passengers
-    buyer_info = {"name": f"Client {client_id}", "email": f"client{client_id}@example.com"}
 
     reservation_data = {
         "id": int(time.time()) + random.randint(1000, 9999),
@@ -194,10 +186,13 @@ def make_reservation():
         "passengers": passengers,
         "total_price": total_price,
         "client_id": client_id,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
+        "status": "pending",
     }
 
     print(f"[Reservation MS] Criando reserva: {reservation_data}")
+
+    reservations.append(reservation_data)
 
     try:
         publish_channel.basic_publish(
@@ -210,7 +205,6 @@ def make_reservation():
             "itinerary_id": itinerary_id, 
             "passengers": passengers,
             "total_price": total_price, 
-            "buyer_info": buyer_info,
             "client_id": client_id,
             "currency": "BRL",
         }
@@ -244,6 +238,15 @@ def make_reservation():
     except Exception as e:
         print(f"[Reservation MS ERROR] Ocorreu um erro inesperado: {e}")
         return jsonify({"error": "Ocorreu um erro inesperado."}), 500
+
+@app.route('/api/reserve/list/<client_id>', methods=['GET'])
+def list_reservations(client_id):
+    try:
+        reservations_for_client = [res for res in reservations if int(res['client_id']) == int(client_id)]
+        return jsonify(reservations_for_client), 200
+    except Exception as e:
+        print(f"[Reservation MS ERROR] Erro ao listar reservas: {e}")
+        return jsonify({"error": "Ocorreu um erro ao listar reservas."}), 500
 
 @app.route('/api/reserve/cancel/<reservation_id>', methods=['DELETE'])
 def cancel_reservation(reservation_id):
